@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор заданий ЕГЭ: граф и таблица дорог</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор заданий ЕГЭ (граф + таблица)</h1>
+        <p>
+          Приложение строит схему дорог с буквенными вершинами и
+          соответствующую таблицу с пунктами <strong>П1, П2, ...</strong>
+          (нумерация таблицы независима от букв графа).
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Количество вершин
+          <input id="vertexCount" type="number" min="4" max="15" value="8" />
+        </label>
+
+        <label>
+          Плотность дорог:
+          <span id="densityValue">45</span>%
+          <input id="density" type="range" min="25" max="85" value="45" />
+        </label>
+
+        <label class="checkbox-line">
+          <input id="weightedMode" type="checkbox" checked />
+          Таблица с длинами дорог
+        </label>
+
+        <div id="weightRange" class="weight-row">
+          <label>
+            Мин. длина
+            <input id="minWeight" type="number" min="1" max="99" value="3" />
+          </label>
+          <label>
+            Макс. длина
+            <input id="maxWeight" type="number" min="1" max="99" value="45" />
+          </label>
+        </div>
+
+        <button id="generateBtn" type="button">Сгенерировать задание</button>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <p id="taskText"></p>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <h2>Схема дорог</h2>
+          <div id="graphWrap" class="graph-wrap"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Таблица пунктов</h2>
+          <div id="tableWrap" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
