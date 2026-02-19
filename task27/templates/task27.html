@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор задания 27</title>
+    <link rel="stylesheet" href="/static/task27.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор задания 27 (анализ данных)</h1>
+        <p>
+          Страница генерирует формулировку задания, данные двух сложностей
+          (A/B), файл-иллюстрацию и ключ с пошаговым разбором.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Метрика расстояния
+          <select id="distanceMetric">
+            <option value="random">Случайная</option>
+            <option value="euclidean">Евклидова</option>
+            <option value="manhattan">Манхеттенская</option>
+            <option value="chebyshev">Чебышева</option>
+          </select>
+        </label>
+
+        <label>
+          Тип вопроса
+          <select id="questionType">
+            <option value="random">Случайный</option>
+            <option value="demo_2026">Тип 1 (минимумы + радиус)</option>
+            <option value="center_extremes">Тип 2 (экстремумы по центрам)</option>
+            <option value="mean_delta">Тип 3 (средние и разности)</option>
+          </select>
+        </label>
+
+        <div class="fixed-info">
+          Размер каждого варианта данных: <strong>10000 строк</strong>.
+          Форматы: <strong>txt, csv, xlsx</strong>.
+        </div>
+
+        <button id="generateBtn" type="button">Сгенерировать вариант 27</button>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div class="badges">
+          <p id="metricBadge" class="badge"></p>
+          <p id="questionBadge" class="badge"></p>
+        </div>
+        <p id="formulaLine" class="formula"></p>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <h2>Иллюстрация по данным файлов</h2>
+          <img id="previewImage" class="preview" alt="Визуализация данных задания 27" />
+        </div>
+
+        <div class="panel">
+          <h2>Файлы задания</h2>
+          <div id="filesWrap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="/static/task27.js"></script>
+  </body>
+</html>
