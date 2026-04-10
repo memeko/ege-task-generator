@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор задания 9 ЕГЭ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор задания 9 ЕГЭ (таблицы и обработка строк)</h1>
+        <p>
+          Страница генерирует несколько шаблонов задания 9: с электронными
+          таблицами и текстовыми строками чисел. Для каждого варианта
+          автоматически формируются условие, файл задания, предпросмотр данных и
+          пошаговый разбор решения.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Тип задания
+          <select id="taskMode">
+            <option value="random" selected>Случайный</option>
+            <option value="spreadsheet_distinct_extremes">
+              Таблица: все числа различны, сравнение экстремумов
+            </option>
+            <option value="spreadsheet_one_pair">
+              Таблица: одна пара повторов
+            </option>
+            <option value="spreadsheet_three_pairs">
+              Таблица: три пары повторов и одно уникальное число
+            </option>
+            <option value="spreadsheet_two_pairs">
+              Таблица: две пары повторов и три уникальных числа
+            </option>
+            <option value="text_three_numbers">
+              Текстовый файл: три числа в строке
+            </option>
+          </select>
+        </label>
+
+        <button id="generateBtn" type="button">Сгенерировать задание 9</button>
+      </section>
+
+      <section class="panel">
+        <h2>Пояснение теории</h2>
+        <div id="theoryWrap" class="theory-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="panel file-layout">
+        <div>
+          <h2>Файлы задания</h2>
+          <div id="filesWrap" class="files-wrap"></div>
+        </div>
+        <div>
+          <h2>Параметры варианта</h2>
+          <div id="paramsWrap" class="params-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Предпросмотр данных</h2>
+        <div id="previewWrap" class="preview-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="vendor/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
