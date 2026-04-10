@@ -4,7 +4,9 @@ const MODE_LABELS = {
   random: "Случайный режим",
   one_pile: "Одна куча: прибавить / умножить",
   one_pile_three: "Одна куча: три возможных хода",
+  one_pile_four: "Одна куча: четыре возможных хода",
   two_piles: "Две кучи: ход в одну из куч",
+  two_piles_extended: "Две кучи: расширенный набор ходов",
 };
 
 const THEORY = {
@@ -34,7 +36,7 @@ const THEORY = {
     {
       title: "Практический алгоритм",
       text:
-        "Удобно последовательно отметить множества В1, П1, В2, П2. Для генератора ниже это делается и аналитически, и программно одной рекурсивной функцией с мемоизацией.",
+        "Удобно последовательно отметить множества В1, П1, В2, П2. Этот подход работает и когда в игре 2 хода, и когда допустимы 3–4 разных действия. Для генератора ниже это делается и аналитически, и программно одной рекурсивной функцией с мемоизацией.",
     },
   ],
 };
@@ -44,18 +46,38 @@ const ONE_PILE_PRESETS = [
   { adds: [2], muls: [2], targets: [58, 66, 74, 82, 94, 106, 118] },
   { adds: [3], muls: [2], targets: [61, 73, 85, 97, 109, 121] },
   { adds: [2], muls: [3], targets: [41, 47, 53, 59, 65, 71] },
+  { adds: [4], muls: [2], targets: [68, 76, 84, 92, 108, 124] },
+  { adds: [5], muls: [2], targets: [74, 82, 90, 98, 114, 130] },
+  { adds: [3], muls: [3], targets: [37, 43, 49, 55, 61, 67] },
 ];
 
 const ONE_PILE_THREE_PRESETS = [
   { adds: [1, 3], muls: [2], targets: [47, 53, 61, 69, 77, 89] },
   { adds: [2, 5], muls: [2], targets: [52, 58, 64, 76, 88, 100] },
   { adds: [1, 4], muls: [3], targets: [38, 44, 50, 56, 62] },
+  { adds: [2], muls: [2, 3], targets: [34, 40, 46, 52, 58, 64] },
+  { adds: [3], muls: [2, 4], targets: [33, 39, 45, 51, 57] },
+  { adds: [1, 5], muls: [2], targets: [54, 62, 70, 78, 86] },
+];
+
+const ONE_PILE_FOUR_PRESETS = [
+  { adds: [1, 4], muls: [2, 3], targets: [32, 36, 40, 44, 48] },
+  { adds: [2, 5], muls: [2, 3], targets: [34, 38, 42, 46, 50] },
+  { adds: [1, 3], muls: [2, 4], targets: [31, 35, 39, 43, 47] },
+  { adds: [2, 4], muls: [2, 5], targets: [29, 33, 37, 41, 45] },
 ];
 
 const TWO_PILE_PRESETS = [
-  { fixedOptions: [5, 7, 9, 11], addValue: 1, mulValue: 2, sMaxOptions: [15, 19, 23], targetOptions: [41, 49, 57, 65] },
-  { fixedOptions: [4, 6, 8, 10], addValue: 2, mulValue: 2, sMaxOptions: [12, 16, 20], targetOptions: [37, 45, 53, 61] },
-  { fixedOptions: [6, 8, 10], addValue: 1, mulValue: 3, sMaxOptions: [10, 12, 14], targetOptions: [43, 52, 61] },
+  { fixedOptions: [5, 7, 9, 11], adds: [1], muls: [2], addBoths: [], sMaxOptions: [15, 19, 23], targetOptions: [41, 49, 57, 65] },
+  { fixedOptions: [4, 6, 8, 10], adds: [2], muls: [2], addBoths: [], sMaxOptions: [12, 16, 20], targetOptions: [37, 45, 53, 61] },
+  { fixedOptions: [6, 8, 10], adds: [1], muls: [3], addBoths: [], sMaxOptions: [10, 12, 14], targetOptions: [43, 52, 61] },
+];
+
+const TWO_PILE_EXT_PRESETS = [
+  { fixedOptions: [5, 7, 9], adds: [1, 2], muls: [2], addBoths: [], sMaxOptions: [10, 12, 14], targetOptions: [37, 43, 49] },
+  { fixedOptions: [4, 6, 8], adds: [1], muls: [2, 3], addBoths: [], sMaxOptions: [9, 11, 13], targetOptions: [35, 41, 47] },
+  { fixedOptions: [6, 8, 10], adds: [1], muls: [2], addBoths: [1], sMaxOptions: [10, 12, 14], targetOptions: [39, 45, 51] },
+  { fixedOptions: [5, 7, 9], adds: [2], muls: [2], addBoths: [1], sMaxOptions: [9, 11, 13], targetOptions: [41, 47, 53] },
 ];
 
 function randInt(min, max) {
@@ -195,6 +217,9 @@ function buildMoveLabel(move, pileMode) {
     }
     return `увеличить количество камней в куче на ${move.value}`;
   }
+  if (move.type === "addBoth") {
+    return `добавить ${move.value} ${pluralStones(move.value)} в каждую кучу`;
+  }
   if (pileMode === "two") {
     return `увеличить количество камней в выбранной куче в ${move.value} раза`;
   }
@@ -218,6 +243,10 @@ function makeOnePileMoves(adds, muls) {
     ...adds.map((value) => ({ type: "add", value })),
     ...muls.map((value) => ({ type: "mul", value })),
   ];
+}
+
+function countActions(template) {
+  return (template.adds?.length || 0) + (template.muls?.length || 0) + (template.addBoths?.length || 0);
 }
 
 function analyzeGame(config) {
@@ -285,13 +314,14 @@ function analyzeGame(config) {
 function makeOnePileConfig(template, target) {
   const moves = makeOnePileMoves(template.adds, template.muls);
   const startValues = Array.from({ length: target - 1 }, (_, index) => index + 1);
+  const actionCount = countActions(template);
+  const modeKey =
+    template.modeKey ||
+    (actionCount >= 4 ? "one_pile_four" : actionCount === 3 ? "one_pile_three" : "one_pile");
 
   return {
-    kind: template.adds.length + template.muls.length > 2 ? "one_pile_three" : "one_pile",
-    modeLabel:
-      template.adds.length + template.muls.length > 2
-        ? MODE_LABELS.one_pile_three
-        : MODE_LABELS.one_pile,
+    kind: modeKey,
+    modeLabel: MODE_LABELS[modeKey],
     target,
     moves,
     pileDescription: "одна куча",
@@ -307,7 +337,7 @@ function makeOnePileConfig(template, target) {
       ),
     stateLabel: (s) => `${s}`,
     metaChips: [
-      { text: template.adds.length + template.muls.length > 2 ? "Одна куча / три хода" : "Одна куча / два хода" },
+      { text: `Одна куча / ${actionCount} ${actionCount === 1 ? "ход" : actionCount < 5 ? "хода" : "ходов"}` },
       { text: `Финиш при ${target} и более`, kind: "alt" },
       { text: `Диапазон: ${formatRange(1, target - 1)}`, kind: "warn" },
     ],
@@ -316,14 +346,17 @@ function makeOnePileConfig(template, target) {
 
 function makeTwoPileConfig(preset, fixed, sMax, target) {
   const moves = [
-    { type: "add", value: preset.addValue },
-    { type: "mul", value: preset.mulValue },
+    ...(preset.adds || []).map((value) => ({ type: "add", value })),
+    ...(preset.muls || []).map((value) => ({ type: "mul", value })),
+    ...(preset.addBoths || []).map((value) => ({ type: "addBoth", value })),
   ];
   const startValues = Array.from({ length: sMax }, (_, index) => index + 1);
+  const actionCount = countActions(preset);
+  const modeKey = preset.modeKey || (actionCount > 2 ? "two_piles_extended" : "two_piles");
 
   return {
     kind: "two_piles",
-    modeLabel: MODE_LABELS.two_piles,
+    modeLabel: MODE_LABELS[modeKey],
     target,
     fixed,
     sMax,
@@ -336,31 +369,40 @@ function makeTwoPileConfig(preset, fixed, sMax, target) {
     isTerminal: (state) => state[0] + state[1] >= target,
     nextStates: (state) => {
       const [a, b] = state;
-      return uniqueStates(
-        [
-          [a + preset.addValue, b],
-          [a, b + preset.addValue],
-          [a * preset.mulValue, b],
-          [a, b * preset.mulValue],
-        ],
-        (value) => `${value[0]},${value[1]}`
-      );
+      const next = [];
+      for (const move of moves) {
+        if (move.type === "add") {
+          next.push([a + move.value, b], [a, b + move.value]);
+          continue;
+        }
+        if (move.type === "mul") {
+          next.push([a * move.value, b], [a, b * move.value]);
+          continue;
+        }
+        next.push([a + move.value, b + move.value]);
+      }
+      return uniqueStates(next, (value) => `${value[0]},${value[1]}`);
     },
     stateLabel: (s) => `(${fixed}, ${s})`,
     metaChips: [
-      { text: "Две кучи / симметричный ход" },
+      { text: `Две кучи / ${actionCount} ${actionCount === 1 ? "тип хода" : actionCount < 5 ? "типа хода" : "типов ходов"}` },
       { text: `Первая куча: ${fixed}`, kind: "alt" },
       { text: `Победа при сумме не менее ${target}`, kind: "warn" },
     ],
   };
 }
 
-function pickOnePileConfig(withThreeMoves) {
-  const presets = withThreeMoves ? ONE_PILE_THREE_PRESETS : ONE_PILE_PRESETS;
+function pickOnePileConfig(modeKey) {
+  const presets =
+    modeKey === "one_pile"
+      ? ONE_PILE_PRESETS
+      : modeKey === "one_pile_three"
+        ? ONE_PILE_THREE_PRESETS
+        : ONE_PILE_FOUR_PRESETS;
   for (let attempt = 0; attempt < 400; attempt += 1) {
     const preset = pick(presets);
     const target = pick(preset.targets);
-    const config = makeOnePileConfig(preset, target);
+    const config = makeOnePileConfig({ ...preset, modeKey }, target);
     const analysis = analyzeGame(config);
     if (analysis.answers.q19 !== null && analysis.answers.q20 && analysis.answers.q21 !== null) {
       return { config, analysis };
@@ -369,13 +411,14 @@ function pickOnePileConfig(withThreeMoves) {
   throw new Error("Не удалось подобрать корректный вариант для одной кучи");
 }
 
-function pickTwoPileConfig() {
+function pickTwoPileConfig(modeKey) {
+  const presets = modeKey === "two_piles" ? TWO_PILE_PRESETS : TWO_PILE_EXT_PRESETS;
   for (let attempt = 0; attempt < 500; attempt += 1) {
-    const preset = pick(TWO_PILE_PRESETS);
+    const preset = pick(presets);
     const fixed = pick(preset.fixedOptions);
     const sMax = pick(preset.sMaxOptions);
     const target = pick(preset.targetOptions);
-    const config = makeTwoPileConfig(preset, fixed, sMax, target);
+    const config = makeTwoPileConfig({ ...preset, modeKey }, fixed, sMax, target);
     const analysis = analyzeGame(config);
     if (analysis.answers.q19 !== null && analysis.answers.q20 && analysis.answers.q21 !== null) {
       return { config, analysis };
@@ -386,15 +429,23 @@ function pickTwoPileConfig() {
 
 function generateVariant(mode) {
   if (mode === "one_pile") {
-    return pickOnePileConfig(false);
+    return pickOnePileConfig("one_pile");
   }
   if (mode === "one_pile_three") {
-    return pickOnePileConfig(true);
+    return pickOnePileConfig("one_pile_three");
+  }
+  if (mode === "one_pile_four") {
+    return pickOnePileConfig("one_pile_four");
   }
   if (mode === "two_piles") {
-    return pickTwoPileConfig();
+    return pickTwoPileConfig("two_piles");
   }
-  return generateVariant(pick(["one_pile", "one_pile_three", "two_piles"]));
+  if (mode === "two_piles_extended") {
+    return pickTwoPileConfig("two_piles_extended");
+  }
+  return generateVariant(
+    pick(["one_pile", "one_pile_three", "one_pile_four", "two_piles", "two_piles_extended"])
+  );
 }
 
 function renderTaskText(config) {
@@ -485,23 +536,30 @@ function buildPythonCode(config) {
     .join(", ");
 
   if (config.kind === "two_piles") {
-    const addValue = config.moves.find((move) => move.type === "add").value;
-    const mulValue = config.moves.find((move) => move.type === "mul").value;
+    const moveLines = [];
+    for (const move of config.moves) {
+      if (move.type === "add") {
+        moveLines.push(`        (a + ${move.value}, b),`);
+        moveLines.push(`        (a, b + ${move.value}),`);
+        continue;
+      }
+      if (move.type === "mul") {
+        moveLines.push(`        (a * ${move.value}, b),`);
+        moveLines.push(`        (a, b * ${move.value}),`);
+        continue;
+      }
+      moveLines.push(`        (a + ${move.value}, b + ${move.value}),`);
+    }
     return `from functools import lru_cache
 
 TARGET = ${config.target}
 FIXED = ${config.fixed}
 SMAX = ${config.sMax}
-ADD = ${addValue}
-MUL = ${mulValue}
 
 
 def moves(a, b):
     return [
-        (a + ADD, b),
-        (a, b + ADD),
-        (a * MUL, b),
-        (a, b * MUL),
+${moveLines.join("\n")}
     ]
 
 
