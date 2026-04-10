@@ -1,12 +1,16 @@
-# Генератор задания 1 ЕГЭ
+# Генераторы ЕГЭ
 
-Статическая веб-страница генератора задания 1 (граф + таблица дорог).
+Репозиторий со статическими генераторами заданий ЕГЭ, публикуемыми через GitHub Pages.
+
+## Страницы
+
+- Задание 1: `https://memeko.github.io/ege-task-generator/`
+- Новое задание 12: `https://memeko.github.io/ege-task-generator/task12/`
 
 ## Файлы
 
-- `index.html`
-- `styles.css`
-- `app.js`
+- `/` — генератор задания 1 (`index.html`, `styles.css`, `app.js`)
+- `/task12/` — генератор нового задания 12 по новым исполнителям
 
 ## Публикация на GitHub Pages
 
@@ -17,6 +21,7 @@
    - `Folder`: `/ (root)`
 3. Нажмите `Save`.
 
-После публикации сайт будет доступен по адресу:
+После публикации страницы будут доступны по адресам:
 
-`https://memeko.github.io/ege-task-generator/`
+- `https://memeko.github.io/ege-task-generator/`
+- `https://memeko.github.io/ege-task-generator/task12/`

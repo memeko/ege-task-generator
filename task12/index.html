@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор нового задания 12 КЕГЭ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор нового задания 12 КЕГЭ (новые исполнители)</h1>
+        <p>
+          Страница генерирует задания по новым исполнителям: нормальным
+          алгоритмам Маркова, машине Тьюринга и машине Поста. Для каждого
+          варианта автоматически строятся блок с теорией, формулировка,
+          программа исполнителя и пошаговый разбор с Python-проверкой.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Тип задания
+          <select id="taskMode">
+            <option value="random" selected>Случайный</option>
+            <option value="nam_order">НАМ: упорядочивание символов</option>
+            <option value="nam_reduce">НАМ: сокращение строки</option>
+            <option value="turing_cycle">МТ: циклическая замена символов</option>
+            <option value="post_marks">МП: работа с метками</option>
+          </select>
+        </label>
+
+        <button id="generateBtn" type="button">
+          Сгенерировать новое задание 12
+        </button>
+      </section>
+
+      <section class="panel">
+        <h2>Пояснение теории</h2>
+        <div id="theoryWrap" class="theory-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Программа исполнителя</h2>
+        <div id="programWrap" class="program-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

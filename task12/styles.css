@@ -1,0 +1,301 @@
+:root {
+  --bg: #f6f8fc;
+  --panel: #ffffff;
+  --line: #d7deea;
+  --text: #10223a;
+  --accent: #2563eb;
+  --accent-soft: #e9f0ff;
+  --ok-soft: #e7fbef;
+  --warn-soft: #fff7dd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background: radial-gradient(circle at 10% 0%, #eef3ff 0%, var(--bg) 45%);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(16, 34, 58, 0.05);
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+h3 {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+p {
+  margin: 0;
+  line-height: 1.58;
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+select,
+button {
+  font: inherit;
+}
+
+select {
+  width: 100%;
+  max-width: 420px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+button {
+  width: fit-content;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #1d4ed8;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #bfd0f5;
+  background: #edf3ff;
+  color: #17325f;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chip.alt {
+  border-color: #9fdab5;
+  background: var(--ok-soft);
+  color: #085b39;
+}
+
+.chip.warn {
+  border-color: #ead07a;
+  background: var(--warn-soft);
+  color: #6a5100;
+}
+
+.task-text,
+.program-wrap,
+.solution,
+.theory-wrap {
+  line-height: 1.55;
+}
+
+.task-text p + p,
+.theory-wrap p + p,
+.program-wrap p + p {
+  margin-top: 10px;
+}
+
+.theory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.theory-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 12px;
+}
+
+.theory-card p {
+  margin-bottom: 8px;
+}
+
+.theory-card p:last-child {
+  margin-bottom: 0;
+}
+
+.bullet-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.bullet-list li {
+  margin-bottom: 6px;
+}
+
+.bullet-list li:last-child {
+  margin-bottom: 0;
+}
+
+.note-box,
+.answer-box {
+  margin-top: 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid #bfd0f5;
+  background: #edf3ff;
+}
+
+.answer-box {
+  border-color: #9fdab5;
+  background: var(--ok-soft);
+  font-weight: 700;
+}
+
+.program-table-wrap,
+.solution-table-wrap {
+  overflow: auto;
+  margin-top: 10px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.compact-table {
+  min-width: 420px;
+}
+
+.transition-table {
+  min-width: 560px;
+}
+
+.command-table {
+  min-width: 420px;
+}
+
+.program-caption,
+.small-muted {
+  color: #4d6185;
+  font-size: 14px;
+}
+
+.program-caption {
+  margin-bottom: 8px;
+}
+
+.small-muted {
+  margin-top: 8px;
+}
+
+code {
+  font-family: "Consolas", "DejaVu Sans Mono", monospace;
+  background: #eef3ff;
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+.solution details {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 10px 12px;
+}
+
+.solution summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.solution ol {
+  margin: 10px 0 0 20px;
+  padding: 0;
+}
+
+.solution li {
+  margin-bottom: 8px;
+}
+
+.python-wrap {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fbff;
+  overflow: auto;
+}
+
+pre {
+  margin: 0;
+  padding: 12px;
+  font-family: "Consolas", "DejaVu Sans Mono", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.formula-line {
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+@media (max-width: 860px) {
+  .theory-grid {
+    grid-template-columns: 1fr;
+  }
+}
