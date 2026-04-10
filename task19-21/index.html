@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор заданий 19-21 ЕГЭ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор заданий 19–21 ЕГЭ (игровая задача)</h1>
+        <p>
+          Страница генерирует одно игровое задание с тремя связанными вопросами
+          19, 20 и 21. Для каждого варианта автоматически формируются блок
+          теории, условие игры, три подпункта, краткая карта позиций и спойлер
+          с пошаговым разбором и Python-проверкой.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Тип игры
+          <select id="modeSelect">
+            <option value="random" selected>Случайный</option>
+            <option value="one_pile">Одна куча: прибавить / умножить</option>
+            <option value="one_pile_three">Одна куча: три возможных хода</option>
+            <option value="two_piles">Две кучи: ход в одну из куч</option>
+          </select>
+        </label>
+
+        <button id="generateBtn" type="button">
+          Сгенерировать задание 19–21
+        </button>
+      </section>
+
+      <section class="panel">
+        <h2>Теория</h2>
+        <div id="theoryWrap" class="theory-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div id="taskMeta" class="task-meta"></div>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Вопросы 19–21</h2>
+        <div id="questionWrap" class="question-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ориентир по решению</h2>
+        <div id="statusWrap" class="status-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

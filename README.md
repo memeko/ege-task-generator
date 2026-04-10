@@ -1,30 +1,33 @@
-# Генераторы ЕГЭ
+# EGE Task Generator
 
-Репозиторий со статическими генераторами заданий ЕГЭ, публикуемыми через GitHub Pages.
+GitHub Pages для генераторов ЕГЭ.
 
-## Страницы
+## Ссылки
 
-- Задание 1: `https://memeko.github.io/ege-task-generator/`
-- Новое задание 12: `https://memeko.github.io/ege-task-generator/task12/`
-- Задание 9: `https://memeko.github.io/ege-task-generator/task9/`
+- Задание 1: https://memeko.github.io/ege-task-generator/
+- Новое задание 12: https://memeko.github.io/ege-task-generator/task12/
+- Задания 19–21: https://memeko.github.io/ege-task-generator/task19-21/
 
-## Файлы
+## Структура
 
-- `/` — генератор задания 1 (`index.html`, `styles.css`, `app.js`)
+- `/` — генератор задания 1
 - `/task12/` — генератор нового задания 12 по новым исполнителям
-- `/task9/` — генератор задания 9 с генерацией файлов
+- `/task19-21/` — генератор связанного игрового задания 19–21
 
-## Публикация на GitHub Pages
+## Локальный запуск страницы 12
 
-1. Откройте репозиторий на GitHub: `Settings` → `Pages`.
-2. В `Build and deployment` выберите:
-   - `Source`: `Deploy from a branch`
-   - `Branch`: `main`
-   - `Folder`: `/ (root)`
-3. Нажмите `Save`.
+```bash
+cd task12
+python3 -m http.server 5082
+```
 
-После публикации страницы будут доступны по адресам:
+Открыть: `http://127.0.0.1:5082`
 
-- `https://memeko.github.io/ege-task-generator/`
-- `https://memeko.github.io/ege-task-generator/task12/`
-- `https://memeko.github.io/ege-task-generator/task9/`
+## Локальный запуск страницы 19–21
+
+```bash
+cd task19-21
+python3 -m http.server 5084
+```
+
+Открыть: `http://127.0.0.1:5084`
