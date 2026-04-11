@@ -1088,6 +1088,18 @@ function centersDistances(clusters, metric, useNorm = false) {
   return pairs
 }
 
+function buildClassicManualSteps(questionPayload, metric) {
+  return [
+    'Импортируйте файл A или B в табличный процессор и откройте таблицу с точками.',
+    'Постройте диаграмму рассеяния по столбцам X и Y. На графике обязательно включите подписи осей, чтобы корректно считать граничные прямые.',
+    'Для каждого видимого кластера выпишите ограничения области: прямоугольник через ширину W и высоту H, а также уравнения ограничивающих прямых (полуплоскостей), внутри которых лежат точки этого кластера.',
+    'Перейдите в Python. Считайте точки из файла, затем в цикле проверяйте для каждой точки выполнение выписанных ограничений и добавляйте точку в соответствующий кластер.',
+    `Опишите функцию расстояния по метрике из условия (${metric.formula2d}). Для каждого кластера вложенными циклами переберите все точки: для каждой точки просуммируйте расстояния до остальных, после чего точка с минимальной суммой будет центром кластера.`,
+    'Антицентр ищется тем же перебором, но выбирается точка с максимальной суммой расстояний до остальных точек кластера.',
+    `После выделения центров/антицентров проверьте оставшиеся условия вопроса и вычислите требуемые значения: A — ${questionPayload.promptA}; B — ${questionPayload.promptB}.`,
+  ]
+}
+
 function buildQuestionPayload(scenarioData, questionKey, metric) {
   const variantAClusters = sortBySize(scenarioData.variants.A.clusterStats)
   const variantBClusters = sortBySize(scenarioData.variants.B.clusterStats)
@@ -1317,7 +1329,17 @@ function buildScenarioTheory(scenarioData, metric, questionPayload) {
         <li>В ключе даются два кода без DBSCAN: через геометрические признаки и через расстояния с поиском центров/кластеров.</li>
       </ul>
     </article>`
-    : `
+    : scenarioData.key === 'classic'
+      ? `
+    <article class="theory-card">
+      <h3>2. Классический путь без библиотек</h3>
+      <ul>
+        <li>Сначала по диаграмме выписываются ограничения областей (прямоугольники и формулы ограничивающих прямых).</li>
+        <li>Далее точки вручную раскладываются по кластерам по этим ограничениям — без DBSCAN и без внешних библиотек.</li>
+        <li>Центры и антицентры считаются точным перебором сумм расстояний в каждом кластере.</li>
+      </ul>
+    </article>`
+      : `
     <article class="theory-card">
       <h3>2. DBSCAN как рабочий инструмент</h3>
       <ul>
@@ -1401,7 +1423,11 @@ function buildMetaRows(scenarioData, metric, questionPayload, seed, note) {
     ? [
       ['Метод разбиения (A/B)', 'Визуально-геометрический (без DBSCAN): вложенность + радиальный профиль + поиск центров'],
     ]
-    : [
+    : scenarioData.key === 'classic'
+      ? [
+        ['Метод разбиения (A/B)', 'Визуальный анализ + ограничения областей (без библиотек), затем точный перебор центров/антицентров'],
+      ]
+      : [
       ['DBSCAN (A)', `ε = ${formatNumber(variantA.dbscanConfig.eps, 4)}, minPts = ${variantA.dbscanConfig.minPts}`],
       ['DBSCAN (B)', `ε = ${formatNumber(variantB.dbscanConfig.eps, 4)}, minPts = ${variantB.dbscanConfig.minPts}`],
     ]
@@ -1989,6 +2015,186 @@ print(*ans_a)
 print(*ans_b)`
 }
 
+function buildClassicNoLibCode(metric, questionKey) {
+  const metricCode = {
+    euclidean: 'dx = p[0] - q[0]\n    dy = p[1] - q[1]\n    return (dx * dx + dy * dy) ** 0.5',
+    manhattan: 'return abs(p[0] - q[0]) + abs(p[1] - q[1])',
+    chebyshev: 'return max(abs(p[0] - q[0]), abs(p[1] - q[1]))',
+  }[metric.key]
+
+  const answerPartMap = {
+    classic_sum: "# A: суммы координат центров всех кластеров\nans_a = [int(sum(p[0] for p in centers_a) * 10000), int(sum(p[1] for p in centers_a) * 10000)]\n\n# B: суммы координат антицентров минимального и максимального кластера\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\nq_small = anti_center(small_b)\nq_large = anti_center(large_b)\nans_b = [int((q_small[0] + q_large[0]) * 10000), int((q_small[1] + q_large[1]) * 10000)]",
+    classic_mean: "# A: средние координаты центров\nmx = sum(p[0] for p in centers_a) / len(centers_a)\nmy = sum(p[1] for p in centers_a) / len(centers_a)\nans_a = [int(mx * 10000), int(my * 10000)]\n\n# B: модули разностей координат центров минимального и максимального кластера\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\np_small = center_point(small_b)\np_large = center_point(large_b)\nans_b = [int(abs(p_small[0] - p_large[0]) * 10000), int(abs(p_small[1] - p_large[1]) * 10000)]",
+    classic_extremes: "# A: минимальное и максимальное расстояние от центров до начала координат\norigin = (0.0, 0.0)\ndists_a = [dist(center, origin) for center in centers_a]\nans_a = [int(min(dists_a) * 10000), int(max(dists_a) * 10000)]\n\n# B: максимальное расстояние между центрами и максимальный радиус кластера\npair_max = 0.0\nfor i in range(len(centers_b)):\n    for j in range(i + 1, len(centers_b)):\n        pair_max = max(pair_max, dist(centers_b[i], centers_b[j]))\n\nradii_b = []\nfor cluster, center in zip(clusters_b, centers_b):\n    radius = max(dist(point, center) for point in cluster)\n    radii_b.append(radius)\n\nans_b = [int(pair_max * 10000), int(max(radii_b) * 10000)]",
+    classic_anticenters: "# A: антицентр минимального по размеру кластера\nsmall_a = clusters_a_sorted[0]\nq_small_a = anti_center(small_a)\nans_a = [int(q_small_a[0] * 10000), int(q_small_a[1] * 10000)]\n\n# B: расстояние между антицентрами и расстояние между центрами крайних по размеру кластеров\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\nq_small_b = anti_center(small_b)\nq_large_b = anti_center(large_b)\np_small_b = center_point(small_b)\np_large_b = center_point(large_b)\nans_b = [int(dist(q_small_b, q_large_b) * 10000), int(dist(p_small_b, p_large_b) * 10000)]",
+  }
+
+  const answerPart = answerPartMap[questionKey] || answerPartMap.classic_sum
+
+  return `# Классический вариант без внешних библиотек.
+# Сначала выпишите ограничения кластеров по диаграмме в табличном процессоре.
+# Каждая граница задаётся как a*x + b*y + c >= 0 или <= 0.
+# ВНИМАНИЕ: коэффициенты ниже — шаблон, замените их на ваши.
+
+A_LIMITS = [
+    [
+        (1.0, 0.0, -4.0, '>='),
+        (-1.0, 0.0, 9.5, '>='),
+        (0.0, 1.0, -5.0, '>='),
+        (0.0, -1.0, 12.0, '>='),
+    ],
+    [
+        (1.0, 0.0, -16.0, '>='),
+        (-1.0, 0.0, 26.0, '>='),
+        (0.0, 1.0, -11.0, '>='),
+        (0.0, -1.0, 21.0, '>='),
+    ],
+]
+
+B_LIMITS = [
+    [
+        (1.0, 0.0, 13.5, '>='),
+        (-1.0, 0.0, -6.0, '>='),
+        (0.0, 1.0, -21.5, '>='),
+        (0.0, -1.0, 33.0, '>='),
+    ],
+    [
+        (1.0, 0.0, -6.5, '>='),
+        (-1.0, 0.0, 17.5, '>='),
+        (0.0, 1.0, -5.5, '>='),
+        (0.0, -1.0, 15.0, '>='),
+    ],
+    [
+        (1.0, 0.0, -23.5, '>='),
+        (-1.0, 0.0, 34.0, '>='),
+        (0.0, 1.0, -16.5, '>='),
+        (0.0, -1.0, 28.5, '>='),
+    ],
+]
+
+def parse_num(token):
+    return float(token.replace(',', '.'))
+
+
+def load_points(filename):
+    points = []
+    with open(filename, 'r', encoding='utf-8-sig') as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line:
+                continue
+            # Пропускаем строку заголовка вида "X;Y" или "X Y"
+            if any(ch.isalpha() for ch in line):
+                continue
+            line = line.replace(';', ' ')
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            try:
+                x = parse_num(parts[0])
+                y = parse_num(parts[1])
+            except ValueError:
+                continue
+            points.append((x, y))
+    return points
+
+
+def line_ok(x, y, line):
+    a, b, c, sign = line
+    value = a * x + b * y + c
+    eps = 1e-9
+    if sign == '>=':
+        return value >= -eps
+    return value <= eps
+
+
+def in_cluster(point, limits):
+    x, y = point
+    for line in limits:
+        if not line_ok(x, y, line):
+            return False
+    return True
+
+
+def split_by_limits(points, all_limits):
+    clusters = [[] for _ in all_limits]
+    noise = []
+    for point in points:
+        matched = []
+        for idx, limits in enumerate(all_limits):
+            if in_cluster(point, limits):
+                matched.append(idx)
+        if len(matched) == 1:
+            clusters[matched[0]].append(point)
+        else:
+            # Точка не попала ни в один кластер или попала в несколько: считаем выбросом.
+            noise.append(point)
+    return clusters, noise
+
+
+def dist(p, q):
+    ${metricCode}
+
+
+def sum_distances(point, cluster):
+    total = 0.0
+    for other in cluster:
+        total += dist(point, other)
+    return total
+
+
+def center_point(cluster):
+    best_point = None
+    best_sum = None
+    for point in cluster:
+        current = sum_distances(point, cluster)
+        if best_sum is None or current < best_sum:
+            best_sum = current
+            best_point = point
+    return best_point
+
+
+def anti_center(cluster):
+    worst_point = None
+    worst_sum = None
+    for point in cluster:
+        current = sum_distances(point, cluster)
+        if worst_sum is None or current > worst_sum:
+            worst_sum = current
+            worst_point = point
+    return worst_point
+
+
+def validate_clusters(clusters, expected_count, file_tag):
+    if len(clusters) != expected_count:
+        raise ValueError(f'Для {file_tag} ожидается {expected_count} кластеров, получено {len(clusters)}.')
+    for idx, cluster in enumerate(clusters, start=1):
+        if not cluster:
+            raise ValueError(f'Кластер {idx} в файле {file_tag} пуст. Проверьте ограничения прямых.')
+
+
+points_a = load_points('27_A.csv')
+points_b = load_points('27_B.csv')
+
+clusters_a, noise_a = split_by_limits(points_a, A_LIMITS)
+clusters_b, noise_b = split_by_limits(points_b, B_LIMITS)
+
+validate_clusters(clusters_a, 2, 'A')
+validate_clusters(clusters_b, 3, 'B')
+
+centers_a = [center_point(cluster) for cluster in clusters_a]
+centers_b = [center_point(cluster) for cluster in clusters_b]
+
+clusters_a_sorted = sorted(clusters_a, key=len)
+clusters_b_sorted = sorted(clusters_b, key=len)
+
+${answerPart}
+
+print(*ans_a)
+print(*ans_b)
+`
+}
+
 function buildPythonCode(scenarioData, questionPayload, metric, questionKey) {
   const featureLabels = scenarioData.featureDefs.map((feature) => feature.label)
 
@@ -2001,16 +2207,21 @@ function buildPythonCode(scenarioData, questionPayload, metric, questionKey) {
     }
   }
 
+  if (scenarioData.key === 'classic') {
+    return {
+      primaryTitle: 'Python-решение (классика, без библиотек: ручные ограничения + перебор)',
+      primaryCode: buildClassicNoLibCode(metric, questionKey),
+      secondaryTitle: '',
+      secondaryCode: '',
+    }
+  }
+
   const usesNormalization = scenarioData.key !== 'classic'
   const dbscanLines = usesNormalization
     ? "scaler = MinMaxScaler()\nX = scaler.fit_transform(df[columns])  # нормируем признаки к [0, 1]\n"
     : "X = df[columns].to_numpy()  # в классическом варианте нормировка не нужна\n"
 
   const answerLinesMap = {
-    classic_sum: "# A: суммируем координаты центров\nans_a = [int(sum(c[0] for c in centers_a) * 10000), int(sum(c[1] for c in centers_a) * 10000)]\n\n# B: выбираем антицентры самого маленького и самого большого кластера\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\nq_small = anti_center(small_b, metric)\nq_large = anti_center(large_b, metric)\nans_b = [int((q_small[0] + q_large[0]) * 10000), int((q_small[1] + q_large[1]) * 10000)]",
-    classic_mean: "# A: усредняем координаты центров\nmean_a = np.mean(np.array(centers_a), axis=0)\nans_a = [int(mean_a[0] * 10000), int(mean_a[1] * 10000)]\n\n# B: сравниваем центры минимального и максимального кластеров\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\np_small = center_point(small_b, metric)\np_large = center_point(large_b, metric)\nans_b = [int(abs(p_small[0] - p_large[0]) * 10000), int(abs(p_small[1] - p_large[1]) * 10000)]",
-    classic_extremes: "# A: расстояния от центров до начала координат\ndists_a = [dist(center, np.zeros(2), metric) for center in centers_a]\nans_a = [int(min(dists_a) * 10000), int(max(dists_a) * 10000)]\n\n# B: максимальное расстояние между центрами и максимальный радиус кластера\npairs_b = [dist(centers_b[i], centers_b[j], metric) for i in range(len(centers_b)) for j in range(i + 1, len(centers_b))]\nradii_b = [max(dist(point, center, metric) for point in cluster) for cluster, center in zip(clusters_b, centers_b)]\nans_b = [int(max(pairs_b) * 10000), int(max(radii_b) * 10000)]",
-    classic_anticenters: "# A: антицентр минимального кластера\nsmall_a = clusters_a_sorted[0]\nq_small_a = anti_center(small_a, metric)\nans_a = [int(q_small_a[0] * 10000), int(q_small_a[1] * 10000)]\n\n# B: расстояния между антицентрами и центрами крайних по размеру кластеров\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\nq_small_b = anti_center(small_b, metric)\nq_large_b = anti_center(large_b, metric)\np_small_b = center_point(small_b, metric)\np_large_b = center_point(large_b, metric)\nans_b = [int(dist(q_small_b, q_large_b, metric) * 10000), int(dist(p_small_b, p_large_b, metric) * 10000)]",
     signal_pair_centers: "# A: средняя длительность и средняя высота по центрам\navg_center_a = np.mean(np.array([item['center_raw'][:2] for item in clusters_a]), axis=0)\nans_a = [int(avg_center_a[0] * 100), int(avg_center_a[1])]\n\n# B: севернейший и восточнейший центры\nnorth_b = max(clusters_b, key=lambda item: item['center_raw'][2])\neast_b = max(clusters_b, key=lambda item: item['center_raw'][3])\nans_b = [int(north_b['center_raw'][2] * 10000), int(east_b['center_raw'][3] * 10000)]",
     signal_geo_span: "# A: минимальное и максимальное расстояние между центрами в нормированном пространстве\ncenter_pairs = [dist(clusters_a[i]['center_norm'], clusters_a[j]['center_norm'], metric) for i in range(len(clusters_a)) for j in range(i + 1, len(clusters_a))]\nans_a = [int(min(center_pairs) * 10000), int(max(center_pairs) * 10000)]\n\n# B: разности средних параметров у самого маленького и самого большого кластера\nsmall_b, large_b = clusters_b_sorted[0], clusters_b_sorted[-1]\nans_b = [int(abs(small_b['center_raw'][0] - large_b['center_raw'][0]) * 100), int(abs(small_b['center_raw'][1] - large_b['center_raw'][1]))]",
   }
@@ -2115,22 +2326,33 @@ print(*ans_b)`
 
 function buildSolutionHtml(scenarioData, questionPayload, metric) {
   const answerText = `${questionPayload.answers.A[0]} ${questionPayload.answers.A[1]}\n${questionPayload.answers.B[0]} ${questionPayload.answers.B[1]}`
-  const reasoning = questionPayload.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')
+  const steps = scenarioData.key === 'classic' ? buildClassicManualSteps(questionPayload, metric) : questionPayload.steps
+  const reasoning = steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')
   const questionKey = questionPayload.title ? Object.keys(QUESTION_FAMILIES).find((key) => QUESTION_FAMILIES[key].title === questionPayload.title) || '' : ''
   const codeBundle = buildPythonCode(scenarioData, questionPayload, metric, questionKey)
-  const usesDbscanAnimation = scenarioData.key !== 'radio_nested'
+  const usesDbscanAnimation = scenarioData.key === 'signal_4d'
 
   const summaryText = usesDbscanAnimation
     ? 'Показать пошаговый разбор, анимацию DBSCAN и ответ'
     : 'Показать пошаговый разбор и ответ'
 
-  const introText = usesDbscanAnimation
-    ? 'Разбор ниже описывает учебный путь решения: визуальное выделение кластеров, затем DBSCAN, затем вычисление искомых величин уже по найденным группам.'
-    : 'Разбор ниже описывает учебный путь решения без DBSCAN: визуальное выделение вложенной пары, затем геометрическое разделение по расстояниям и поиск центров.'
+  let introText = ''
+  if (scenarioData.key === 'classic') {
+    introText = 'Разбор ниже описывает классический путь без библиотек: диаграмма в табличном процессоре, выписывание ограничений областей, ручное разбиение на кластеры и точный перебор центров/антицентров.'
+  } else if (usesDbscanAnimation) {
+    introText = 'Разбор ниже описывает учебный путь решения: визуальное выделение кластеров, затем DBSCAN, затем вычисление искомых величин уже по найденным группам.'
+  } else {
+    introText = 'Разбор ниже описывает учебный путь решения без DBSCAN: визуальное выделение вложенной пары, затем геометрическое разделение по расстояниям и поиск центров.'
+  }
 
-  const animationHtml = usesDbscanAnimation
-    ? '<div class="anim-box" id="dbscanAnimBox"></div>'
-    : '<div class="note-box">Для сюжета радиолюбителя DBSCAN намеренно не используется: при кольцевой вложенности решение устойчивее через геометрию, расстояния и поиск центров.</div>'
+  let animationHtml = ''
+  if (usesDbscanAnimation) {
+    animationHtml = '<div class="anim-box" id="dbscanAnimBox"></div>'
+  } else if (scenarioData.key === 'radio_nested') {
+    animationHtml = '<div class="note-box">Для сюжета радиолюбителя DBSCAN намеренно не используется: при кольцевой вложенности решение устойчивее через геометрию, расстояния и поиск центров.</div>'
+  } else {
+    animationHtml = '<div class="note-box">Для классического типа в ключе используется ручной алгоритм без библиотек: ограничения областей + перебор расстояний.</div>'
+  }
 
   const secondaryCodeHtml = codeBundle.secondaryCode
     ? `
