@@ -1,80 +1,66 @@
 # Генератор задания 27
 
-## Локальный запуск
+## Текущая версия: HTML + JS
+
+Новая версия генератора работает как статическая страница без бэкенда.
+
+### Быстрый запуск
 
 ```bash
 cd /Users/anso/Documents/ИИ/ege-task-generator/task27
-python3 -m pip install -r requirements.txt
-python3 app.py
+python3 -m http.server 5091
 ```
 
 Откройте:
 
-`http://127.0.0.1:5057`
+`http://127.0.0.1:5091`
 
-## Что генерируется
+Можно также открыть файл напрямую:
 
-- Полная формулировка задания 27 в стиле демо-текста.
-- Два варианта сложности: `A` и `B`.
-- Для каждого варианта по `10000` строк в `txt`, `csv`, `xlsx`.
-- Иллюстрация (график), построенная по данным сгенерированных файлов.
-- Ключ в спойлере: пошаговое объяснение + ответ + код решения на Python.
+`/Users/anso/Documents/ИИ/ege-task-generator/task27/index.html`
+
+Но для корректной работы скачивания файлов удобнее использовать локальный HTTP-сервер.
+
+## Что умеет новая страница
+
+- Генерирует два варианта сложности: `A` и `B`.
+- Формирует по `10000` строк данных для каждого варианта.
+- Выдаёт файлы в форматах `txt`, `csv`, `xlsx`.
+- Поддерживает несколько сюжетов:
+  - классическая задача по точкам на плоскости;
+  - авторская задача про радиолюбителя, помехи и вложенные кольцевые кластеры;
+  - авторская 4D-задача про сигналы с координатами фиксации.
+- Для радиолюбительского сюжета разбор и код идут без DBSCAN: через геометрию, расстояния и поиск центров/кластеров.
+- Поддерживает несколько типов вопросов по каждому сюжету.
+- Показывает визуализацию:
+  - scatter-графики для 2D;
+  - матрицу попарных диаграмм для 4D.
+- В ключе выводит:
+  - теоретический ориентир;
+  - пошаговый разбор;
+  - анимацию DBSCAN на подвыборке (для классического и 4D-сюжетов);
+  - ответ;
+  - Python-код решения (для радио — два варианта без DBSCAN).
 
 ## Метрики расстояния
 
 - `euclidean`
 - `manhattan`
 - `chebyshev`
-- `random` (по умолчанию)
+- `random`
 
-## Типы вопросов
+## Сюжеты
 
-- `demo_2026`
-- `center_extremes`
-- `mean_delta`
-- `random` (по умолчанию)
+- `classic`
+- `radio_nested`
+- `signal_4d`
+- `random`
 
-## Публикация на Render (Blueprint)
+## Совместимость со старой версией
 
-Подготовленные файлы:
+В папке по-прежнему сохранены файлы старой Flask-версии (`app.py`, `templates/`, `static/`) для предыдущего варианта деплоя. Текущая HTML+JS-страница использует:
 
-- `/Users/anso/Documents/ИИ/ege-task-generator/render.yaml`
-- `/Users/anso/Documents/ИИ/ege-task-generator/task27/requirements.txt`
-- `/Users/anso/Documents/ИИ/ege-task-generator/task27/.python-version`
-
-Шаги деплоя:
-
-1. Запушьте проект в GitHub/GitLab/Bitbucket.
-2. Убедитесь, что в репозитории есть `render.yaml` в корне.
-3. В Render откройте `New` -> `Blueprint`.
-4. Выберите репозиторий и подтвердите создание сервиса.
-5. Дождитесь сборки и запуска, затем откройте URL сервиса.
-
-Технические параметры уже зашиты в `render.yaml`:
-
-- `buildCommand: pip install --upgrade pip && pip install -r task27/requirements.txt`
-- `startCommand: gunicorn --chdir task27 app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120`
-- Python: `3.11.9`
-
-Примечание: папка `generated` в Render хранится на эфемерном диске (данные файлов задач не постоянны между перезапусками/деплоями).
-
-## Публикация на Render (без Blueprint, вручную)
-
-Если хотите создать сервис вручную:
-
-1. `New` -> `Web Service`.
-2. Runtime: `Python`.
-3. Build Command: `pip install --upgrade pip && pip install -r task27/requirements.txt`.
-4. Start Command: `gunicorn --chdir task27 app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120`.
-5. Root Directory можно оставить пустым.
-6. Добавьте переменную окружения `PYTHON_VERSION=3.11.9`.
-
-## Если появилась ошибка `ModuleNotFoundError: No module named 'app'`
-
-Причина: старт выполняется из корня репозитория, а файл приложения находится в `task27/app.py`.
-
-Исправление в Render Service Settings:
-
-1. Build Command: `pip install --upgrade pip && pip install -r task27/requirements.txt`
-2. Start Command: `gunicorn --chdir task27 app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120`
-3. Нажмите `Save Changes` и `Manual Deploy` -> `Deploy latest commit`.
+- `/Users/anso/Documents/ИИ/ege-task-generator/task27/index.html`
+- `/Users/anso/Documents/ИИ/ege-task-generator/task27/styles.css`
+- `/Users/anso/Documents/ИИ/ege-task-generator/task27/app.js`
+- `/Users/anso/Documents/ИИ/ege-task-generator/task27/vendor/xlsx.full.min.js`
