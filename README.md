@@ -6,6 +6,7 @@ GitHub Pages для генераторов ЕГЭ.
 
 - Задание 1: https://memeko.github.io/ege-task-generator/
 - Новое задание 12: https://memeko.github.io/ege-task-generator/task12/
+- Задание 25: https://memeko.github.io/ege-task-generator/task25/
 - Задание 27: https://memeko.github.io/ege-task-generator/task27/
 - Задания 19–21: https://memeko.github.io/ege-task-generator/task19-21/
 
@@ -13,6 +14,7 @@ GitHub Pages для генераторов ЕГЭ.
 
 - `/` — генератор задания 1
 - `/task12/` — генератор нового задания 12 по новым исполнителям
+- `/task25/` — генератор задания 25 (числа, делители, маски, степени)
 - `/task27/` — генератор задания 27 (анализ данных, несколько сюжетов)
 - `/task19-21/` — генератор связанного игрового задания 19–21
 
@@ -42,3 +44,12 @@ python3 -m http.server 5091
 ```
 
 Открыть: `http://127.0.0.1:5091`
+
+## Локальный запуск страницы 25
+
+```bash
+cd task25
+python3 -m http.server 5090
+```
+
+Открыть: `http://127.0.0.1:5090`

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор задания 25 ЕГЭ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор задания 25 ЕГЭ (числа, делители, маски)</h1>
+        <p>
+          Страница генерирует разные типы задания 25 по материалам главы: маски,
+          делители, простые множители, свойства количества делителей и задачи на
+          быстрое возведение в степень.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Тип задачи
+          <select id="modeSelect">
+            <option value="random" selected>Случайный</option>
+            <option value="mask">Маска числа + делимость</option>
+            <option value="div_sum">Сумма делителей (кроме 1 и n)</option>
+            <option value="prime_sum">Сумма простых делителей</option>
+            <option value="three_primes">Произведение трёх простых множителей</option>
+            <option value="odd_divisors">Нечётное число делителей</option>
+            <option value="fast_pow">Последние цифры степени</option>
+          </select>
+        </label>
+
+        <button id="generateBtn" type="button">Сгенерировать задание 25</button>
+      </section>
+
+      <section class="panel">
+        <h2>Теория</h2>
+        <div id="theoryWrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div id="taskMeta" class="chips"></div>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
