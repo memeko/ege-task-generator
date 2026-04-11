@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор задания 26 ЕГЭ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор задания 26 ЕГЭ (сортировка и оптимальный выбор)</h1>
+        <p>
+          Страница генерирует несколько сюжетов задания 26, формирует входной
+          файл, показывает предпросмотр данных и даёт ключ с пошаговым разбором
+          и Python-решением.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Тип задачи
+          <select id="taskMode">
+            <option value="random" selected>Случайный</option>
+            <option value="shift_tasks">Рабочая смена: максимум задач</option>
+            <option value="discount_checks">Опт: скидка на каждый 6-й товар</option>
+            <option value="hotel_pair">Гостиница: 2 свободные между занятыми</option>
+            <option value="hostel_sequence">Хостел: максимальная цепочка номеров</option>
+            <option value="admission">Вуз: проходной и полупроходной балл</option>
+          </select>
+        </label>
+
+        <button id="generateBtn" type="button">Сгенерировать задание 26</button>
+      </section>
+
+      <section class="panel">
+        <h2>Пояснение теории</h2>
+        <div id="theoryWrap" class="theory-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="panel file-layout">
+        <div>
+          <h2>Файл задания</h2>
+          <div id="filesWrap" class="files-wrap"></div>
+        </div>
+        <div>
+          <h2>Параметры варианта</h2>
+          <div id="paramsWrap" class="params-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Предпросмотр данных</h2>
+        <div id="previewWrap" class="preview-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
