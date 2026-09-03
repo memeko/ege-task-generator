@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор задания 23 ЕГЭ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="panel">
+        <h1>Генератор задания 23 ЕГЭ (пути во взвешенном графе)</h1>
+        <p>
+          Страница создаёт ориентированный ациклический граф, текстовый файл
+          с его рёбрами и ключ с двумя программными решениями: методом Флойда
+          и методом релаксации путей на основе алгоритма Дейкстры.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <label>
+          Тип вопроса
+          <select id="questionType">
+            <option value="random">Случайный</option>
+            <option value="shortest">Длина кратчайшего пути</option>
+            <option value="longest">Длина самого длинного пути</option>
+            <option value="difference">Разность длинного и короткого путей</option>
+          </select>
+        </label>
+
+        <label>
+          Начальная вершина
+          <select id="startMode">
+            <option value="random">Случайный номер</option>
+            <option value="one">Вершина 1</option>
+            <option value="not_one">Не вершина 1</option>
+          </select>
+        </label>
+
+        <label>
+          Количество вершин
+          <input id="vertexCount" type="number" min="7" max="16" value="10" />
+        </label>
+
+        <label>
+          <span>Плотность рёбер: <strong id="densityValue">36</strong>%</span>
+          <input id="density" type="range" min="25" max="65" value="36" />
+        </label>
+
+        <button id="generateBtn" type="button">Сгенерировать задание 23</button>
+      </section>
+
+      <section class="panel">
+        <h2>Пояснение теории</h2>
+        <div id="theoryWrap" class="theory-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Условие</h2>
+        <div id="taskText" class="task-text"></div>
+      </section>
+
+      <section class="panel file-layout">
+        <div>
+          <h2>Файл задания</h2>
+          <div id="filesWrap" class="files-wrap"></div>
+        </div>
+        <div>
+          <h2>Параметры варианта</h2>
+          <div id="paramsWrap" class="params-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Граф по данным файла</h2>
+        <p class="section-note">
+          Вершины размещены по уровням слева направо. Стрелка показывает
+          направление ребра, число рядом с ней — вес.
+        </p>
+        <div id="graphWrap" class="graph-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Предпросмотр файла</h2>
+        <div id="previewWrap" class="preview-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ключ</h2>
+        <div id="solutionWrap" class="solution"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
