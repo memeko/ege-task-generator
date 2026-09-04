@@ -117,15 +117,29 @@ function getConfig() {
   };
 }
 
-function generateVertexIds(count, startMode) {
-  const ids = shuffle(Array.from({ length: count }, (_, index) => index + 1));
-  const oneIndex = ids.indexOf(1);
+function generateVertexIds(count, source, target) {
+  const ids = new Array(count).fill(null);
+  const availableIds = Array.from({ length: count - 1 }, (_, index) => index + 2);
+  ids[0] = 1;
 
-  if (startMode === "one") {
-    [ids[0], ids[oneIndex]] = [ids[oneIndex], ids[0]];
+  if (source === 0) {
+    ids[target] = pick(availableIds);
+  } else {
+    const [sourceId, targetId] = shuffle(availableIds)
+      .slice(0, 2)
+      .sort((a, b) => a - b);
+    ids[source] = sourceId;
+    ids[target] = targetId;
   }
-  if (startMode === "not_one" && ids[0] === 1) {
-    [ids[0], ids[1]] = [ids[1], ids[0]];
+
+  const usedIds = new Set(ids.filter((id) => id !== null));
+  const remainingIds = shuffle(availableIds.filter((id) => !usedIds.has(id)));
+  let nextId = 0;
+  for (let vertex = 1; vertex < count; vertex += 1) {
+    if (ids[vertex] === null) {
+      ids[vertex] = remainingIds[nextId];
+      nextId += 1;
+    }
   }
   return ids;
 }
@@ -159,8 +173,16 @@ function edgeKey(from, to) {
 }
 
 function makeGraph(config) {
-  const ids = generateVertexIds(config.vertexCount, config.startMode);
   const levels = buildLevels(config.vertexCount);
+  const target = config.vertexCount - 1;
+  const internalSourceCandidates = levels.slice(1, -2).flat();
+  let source = 0;
+  if (config.startMode === "not_one") {
+    source = pick(internalSourceCandidates);
+  } else if (config.startMode === "random" && Math.random() < 0.5) {
+    source = pick(internalSourceCandidates);
+  }
+  const ids = generateVertexIds(config.vertexCount, source, target);
   const levelByVertex = new Array(config.vertexCount).fill(0);
   levels.forEach((vertices, level) => {
     for (const vertex of vertices) {
@@ -235,8 +257,8 @@ function makeGraph(config) {
     levels,
     levelByVertex,
     edges,
-    source: 0,
-    target: config.vertexCount - 1,
+    source,
+    target,
     possibleEdgeCount: possible.length,
   };
 }
@@ -308,6 +330,8 @@ function generateModel(config) {
     const shortest = solveDag(graph, false);
     const longest = solveDag(graph, true);
     if (
+      graph.ids[0] === 1 &&
+      graph.ids[graph.source] < graph.ids[graph.target] &&
       countPaths(graph) >= 2 &&
       Number.isFinite(shortest.distance10) &&
       Number.isFinite(longest.distance10) &&
@@ -1104,7 +1128,7 @@ function buildSolutionContent(model, dataFileName = "23.txt") {
     <div class="answer-box">Ответ: ${answer}</div>
     <div class="code-title">Способ 1. Python: алгоритм Флойда</div>
     <div class="python-wrap"><pre><code>${highlightPython(buildFloydCode(model, dataFileName))}</code></pre></div>
-    <div class="code-title">Способ 2. Python: алгоритм Дейкстры / релаксация DAG</div>
+    <div class="code-title">Способ 2. Python: алгоритм Дейстры</div>
     <div class="python-wrap"><pre><code>${highlightPython(buildRelaxationCode(model, dataFileName))}</code></pre></div>
   `;
 }
