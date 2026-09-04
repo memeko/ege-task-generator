@@ -6,6 +6,9 @@ const QUESTION_LABELS = {
   difference: "Разность длин путей",
 };
 
+const MIN_VERTEX_COUNT = 7;
+const MAX_VERTEX_COUNT = 200;
+
 const elements = {
   questionType: document.getElementById("questionType"),
   startMode: document.getElementById("startMode"),
@@ -63,7 +66,7 @@ function getConfig() {
   elements.densityValue.textContent = String(density);
 
   return {
-    vertexCount: randInt(7, 16),
+    vertexCount: randInt(MIN_VERTEX_COUNT, MAX_VERTEX_COUNT),
     density,
     questionType:
       elements.questionType.value === "random"
@@ -87,7 +90,7 @@ function generateVertexIds(count, startMode) {
 }
 
 function buildLevels(count) {
-  const levelCount = clamp(Math.round(count / 2), 4, 6);
+  const levelCount = clamp(Math.round(Math.sqrt(count)), 4, 12);
   const levels = Array.from({ length: levelCount }, () => []);
   levels[0].push(0);
   levels[levelCount - 1].push(count - 1);
@@ -170,10 +173,14 @@ function makeGraph(config) {
     }
   }
 
-  const targetEdges = Math.max(
-    edges.length,
-    Math.round((possible.length * config.density) / 100),
-    ids[config.vertexCount - 1]
+  // Для больших графов процент от всех пар дал бы тысячи нечитаемых рёбер.
+  // Поэтому плотность управляет числом связей относительно числа вершин.
+  const requestedEdges = Math.round(
+    config.vertexCount * (1.4 + config.density / 100)
+  );
+  const targetEdges = Math.min(
+    possible.length,
+    Math.max(edges.length, requestedEdges, ids[config.vertexCount - 1])
   );
   for (const [from, to] of shuffle(possible)) {
     if (edges.length >= targetEdges) {
@@ -513,12 +520,13 @@ function findWeightLabelPosition(segment, text, occupied, vertexBoxes, width, he
 }
 
 function renderGraph(model) {
-  const width = 1120;
-  const height = 560;
-  const paddingX = 75;
-  const paddingY = 55;
-  const radius = 22;
   const graph = model.graph;
+  const largestLevel = Math.max(...graph.levels.map((vertices) => vertices.length));
+  const radius = graph.ids.length > 120 ? 16 : graph.ids.length > 60 ? 18 : 22;
+  const paddingX = 75;
+  const paddingY = radius + 34;
+  const width = Math.max(1120, (graph.levels.length - 1) * 165 + paddingX * 2);
+  const height = Math.max(560, largestLevel * (radius * 2 + 34) + paddingY * 2);
   const positions = new Array(graph.ids.length);
 
   graph.levels.forEach((vertices, level) => {
@@ -536,6 +544,7 @@ function renderGraph(model) {
   const svg = createSvgElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: `0 0 ${width} ${height}`,
+    style: `min-width: ${width}px`,
     role: "img",
     "aria-label": "Ориентированный взвешенный граф задания",
   });
