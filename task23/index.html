@@ -10,11 +10,7 @@
     <main class="app">
       <header class="panel">
         <h1>Генератор задания 23 ЕГЭ (пути во взвешенном графе)</h1>
-        <p>
-          Страница создаёт ориентированный ациклический граф, текстовый файл
-          с его рёбрами и ключ с двумя программными решениями: методом Флойда
-          и методом релаксации путей на основе алгоритма Дейкстры.
-        </p>
+        <p>Обновленное задание по прототипу 2026/27 года.</p>
       </header>
 
       <section class="panel controls">
@@ -38,11 +34,22 @@
         </label>
 
         <label>
+          Количество вершин
+          <select id="vertexMode">
+            <option value="any">Любое количество вершин</option>
+            <option value="manual">До 10 вершин (для ручной проверки)</option>
+          </select>
+        </label>
+
+        <label>
           <span>Плотность рёбер: <strong id="densityValue">36</strong>%</span>
           <input id="density" type="range" min="25" max="65" value="36" />
         </label>
 
-        <button id="generateBtn" type="button">Сгенерировать задание 23</button>
+        <div class="control-actions">
+          <button id="generateBtn" type="button">Сгенерировать задание 23</button>
+          <button id="printBtn" class="button-secondary" type="button">Печатать</button>
+        </div>
       </section>
 
       <section class="panel">
@@ -86,6 +93,33 @@
       </section>
     </main>
 
+    <dialog id="printDialog" class="print-dialog" aria-labelledby="printDialogTitle">
+      <form id="printForm" class="print-form">
+        <div class="dialog-heading">
+          <div>
+            <h2 id="printDialogTitle">Комплект печатных вариантов</h2>
+            <p>Будут созданы задания, решения, графы SVG/JPEG и файлы данных TXT.</p>
+          </div>
+          <button id="printCloseBtn" class="dialog-close" type="button" aria-label="Закрыть">×</button>
+        </div>
+
+        <label>
+          Сколько задач сгенерировать
+          <input id="printCount" type="number" min="1" max="30" value="5" required />
+        </label>
+        <p class="dialog-note">Допустимо от 1 до 30 задач. Текущие настройки применяются ко всему комплекту, а значения «Случайный» выбираются заново для каждой задачи.</p>
+
+        <div id="printStatus" class="print-status" role="status" aria-live="polite"></div>
+        <a id="printDownload" class="download-link print-download" hidden>Скачать комплект ZIP</a>
+
+        <div class="dialog-actions">
+          <button id="printCancelBtn" class="button-secondary" type="button">Отмена</button>
+          <button id="printCreateBtn" type="submit">Создать комплект</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="zip.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

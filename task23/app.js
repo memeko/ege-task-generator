@@ -8,13 +8,24 @@ const QUESTION_LABELS = {
 
 const MIN_VERTEX_COUNT = 7;
 const MAX_VERTEX_COUNT = 200;
+const MANUAL_VERTEX_COUNT = 10;
 
 const elements = {
   questionType: document.getElementById("questionType"),
   startMode: document.getElementById("startMode"),
+  vertexMode: document.getElementById("vertexMode"),
   density: document.getElementById("density"),
   densityValue: document.getElementById("densityValue"),
   generateBtn: document.getElementById("generateBtn"),
+  printBtn: document.getElementById("printBtn"),
+  printDialog: document.getElementById("printDialog"),
+  printForm: document.getElementById("printForm"),
+  printCount: document.getElementById("printCount"),
+  printCloseBtn: document.getElementById("printCloseBtn"),
+  printCancelBtn: document.getElementById("printCancelBtn"),
+  printCreateBtn: document.getElementById("printCreateBtn"),
+  printStatus: document.getElementById("printStatus"),
+  printDownload: document.getElementById("printDownload"),
   theoryWrap: document.getElementById("theoryWrap"),
   taskText: document.getElementById("taskText"),
   filesWrap: document.getElementById("filesWrap"),
@@ -25,6 +36,7 @@ const elements = {
 };
 
 let currentDownloadUrl = null;
+let printPackageUrl = null;
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -56,17 +68,46 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function highlightPython(code) {
+  const tokenPattern = /(#.*$)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|\b(def|return|for|in|if|elif|else|while|with|as|break|continue|not|and|or|is|None|True|False)\b|\b(float|int|set|sorted|len|open|round|print|range|list|dict|min|max)\b|\b(\d+(?:\.\d+)?)\b/gm;
+  let result = "";
+  let lastIndex = 0;
+
+  for (const match of code.matchAll(tokenPattern)) {
+    result += escapeHtml(code.slice(lastIndex, match.index));
+    let className = "py-number";
+    if (match[1]) {
+      className = "py-comment";
+    } else if (match[2]) {
+      className = "py-string";
+    } else if (match[3]) {
+      className = "py-keyword";
+    } else if (match[4]) {
+      className = "py-builtin";
+    }
+    result += `<span class="${className}">${escapeHtml(match[0])}</span>`;
+    lastIndex = match.index + match[0].length;
+  }
+
+  return result + escapeHtml(code.slice(lastIndex));
+}
+
 function formatWeight(weight10) {
   return (weight10 / 10).toFixed(1);
 }
 
 function getConfig() {
   const density = clamp(Number(elements.density.value) || 36, 25, 65);
+  const maxVertexCount =
+    elements.vertexMode.value === "manual"
+      ? MANUAL_VERTEX_COUNT
+      : MAX_VERTEX_COUNT;
   elements.density.value = String(density);
   elements.densityValue.textContent = String(density);
 
   return {
-    vertexCount: randInt(MIN_VERTEX_COUNT, MAX_VERTEX_COUNT),
+    vertexCount: randInt(MIN_VERTEX_COUNT, maxVertexCount),
+    vertexMode: elements.vertexMode.value,
     density,
     questionType:
       elements.questionType.value === "random"
@@ -323,6 +364,7 @@ function renderTheory(model) {
       : "Классический алгоритм Дейкстры ищет минимум. Для максимального пути его нельзя просто заменить на выбор максимума. Так как граф ациклический, вершины сначала располагают в топологическом порядке, а затем выполняют те же операции релаксации рёбер.";
 
   elements.theoryWrap.innerHTML = `
+    <div class="theory-alert"><strong>ВНИМАНИЕ!</strong> В прототипе, представленном на Всероссийском съезде учителей информатики 2026 была показана задача только на поиск кратчайшего пути от 1 вершины.</div>
     <div class="chips">
       <span class="chip">${escapeHtml(QUESTION_LABELS[model.config.questionType])}</span>
       <span class="chip ok">Ориентированный DAG</span>
@@ -330,7 +372,7 @@ function renderTheory(model) {
     </div>
     <div class="theory-grid">
       <article class="theory-card">
-        <h3>Ориентированный ациклический граф</h3>
+        <h3>Ориентированный ациклический граф (DAG)</h3>
         <p>У каждого ребра есть направление. Ациклический граф не содержит пути, который по стрелкам возвращается в уже пройденную вершину. Поэтому самый длинный путь имеет конечную длину.</p>
       </article>
       <article class="theory-card">
@@ -348,7 +390,7 @@ function renderTheory(model) {
         </ol>
       </article>
       <article class="theory-card">
-        <h3>Способ 2. Дейкстра и релаксация DAG</h3>
+        <h3>Способ 2. Алгоритм Дейстры</h3>
         <p>${longestNote}</p>
         <ol>
           <li>Для Дейкстры расстояние до старта принимаем равным 0, до остальных вершин — бесконечности.</li>
@@ -371,14 +413,18 @@ function renderTheory(model) {
   `;
 }
 
-function renderTask(model) {
-  elements.taskText.innerHTML = `
-    <p>Задание выполняется с использованием прилагаемого файла.</p>
+function buildTaskContent(model, dataFileName = "23.txt") {
+  return `
+    <p>Задание выполняется с использованием прилагаемого файла <strong>${escapeHtml(dataFileName)}</strong>.</p>
     <p>В текстовом файле содержится описание ациклического ориентированного взвешенного графа. В каждой строке файла записаны два натуральных числа (<em>L</em>, <em>M</em>) и одно положительное вещественное число (<em>W</em>). <em>L</em> и <em>M</em> — номера вершин графа, <em>W</em> — вес ребра, ведущего из вершины <em>L</em> в вершину <em>M</em>. Таким образом, количество строк в файле равно количеству рёбер в графе. Две вершины графа не могут быть соединены более чем одним ребром.</p>
     <p>${escapeHtml(questionSentence(model))} Существование хотя бы одного такого пути гарантируется. Под длиной пути понимается сумма весов всех рёбер, составляющих путь.</p>
     <p>Для выполнения этого задания следует написать программу.</p>
     <p>Если граф содержит <em>N</em> вершин, они имеют номера от 1 до <em>N</em> без пропусков. Рёбра в файле могут быть записаны в любом порядке, а направление ребра не обязано идти от меньшего номера к большему. Значения <em>L</em> и <em>M</em> не превышают 200, значение <em>W</em> не превышает 10&nbsp;000. В этом файле записано ${model.graph.edges.length} строк, то есть ровно по одной строке для каждого из ${model.graph.edges.length} рёбер графа. Числа в строках разделены произвольным ненулевым количеством пробелов и/или символов табуляции.</p>
   `;
+}
+
+function renderTask(model) {
+  elements.taskText.innerHTML = buildTaskContent(model);
 }
 
 function renderFile(model, lines) {
@@ -408,6 +454,7 @@ function renderParams(model) {
       <p><strong>Начальная вершина:</strong> ${model.graph.ids[model.graph.source]}</p>
       <p><strong>Конечная вершина:</strong> ${model.graph.ids[model.graph.target]}</p>
       <p><strong>Вершин:</strong> ${model.graph.ids.length}</p>
+      <p><strong>Режим размера:</strong> ${model.config.vertexMode === "manual" ? "До 10 вершин" : "Любое количество вершин"}</p>
       <p><strong>Рёбер:</strong> ${model.graph.edges.length}</p>
       <p><strong>Строк в файле:</strong> ${model.graph.edges.length} (по одной строке на ребро)</p>
       <p><strong>Фактическая плотность:</strong> ${actualDensity}% от возможных направленных рёбер между уровнями</p>
@@ -519,7 +566,7 @@ function findWeightLabelPosition(segment, text, occupied, vertexBoxes, width, he
   throw new Error("Не удалось разместить подписи весов без пересечений.");
 }
 
-function renderGraph(model) {
+function buildGraphSvg(model) {
   const graph = model.graph;
   const largestLevel = Math.max(...graph.levels.map((vertices) => vertices.length));
   const radius = graph.ids.length > 120 ? 16 : graph.ids.length > 60 ? 18 : 22;
@@ -683,7 +730,60 @@ function renderGraph(model) {
     svg.appendChild(text);
   });
 
-  elements.graphWrap.replaceChildren(svg);
+  return svg;
+}
+
+function renderGraph(model) {
+  elements.graphWrap.replaceChildren(buildGraphSvg(model));
+}
+
+function serializeGraph(model) {
+  const svg = buildGraphSvg(model);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svg)}\n`;
+}
+
+async function graphSvgToJpeg(svgText) {
+  const viewBoxMatch = svgText.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  if (!viewBoxMatch) {
+    throw new Error("Не удалось определить размер графа для JPEG.");
+  }
+
+  const width = Math.round(Number(viewBoxMatch[1]));
+  const height = Math.round(Number(viewBoxMatch[2]));
+  const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = svgUrl;
+    await image.decode();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#fbfcff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const jpegBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Браузер не смог создать JPEG-файл."));
+          }
+        },
+        "image/jpeg",
+        0.92
+      );
+    });
+    return new Uint8Array(await jpegBlob.arrayBuffer());
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
 }
 
 function findEdge(graph, from, to) {
@@ -703,7 +803,7 @@ function describePath(model, solution) {
   };
 }
 
-function buildFloydCode(model) {
+function buildFloydCode(model, dataFileName = "23.txt") {
   const start = model.graph.ids[model.graph.source];
   const finish = model.graph.ids[model.graph.target];
   const mode = model.config.questionType;
@@ -791,7 +891,7 @@ FINISH = ${finish}
 # Блок 1. Считываем все рёбра и собираем номера вершин.
 edges = []
 vertices = set()
-with open('23.txt') as file:
+with open('${dataFileName}') as file:
     # Проходим все строки файла; каждая строка описывает одно ребро.
     for line in file:
         L, M, W = line.split()
@@ -816,7 +916,7 @@ answer = round(answer, 1)
 print(int(answer))`;
 }
 
-function buildRelaxationCode(model) {
+function buildRelaxationCode(model, dataFileName = "23.txt") {
   const start = model.graph.ids[model.graph.source];
   const finish = model.graph.ids[model.graph.target];
   const mode = model.config.questionType;
@@ -828,7 +928,7 @@ graph = {}
 vertices = set()
 indegree = {}
 
-with open('23.txt') as file:
+with open('${dataFileName}') as file:
     # Проходим все строки файла; каждая строка описывает одно ребро.
     for line in file:
         L, M, W = line.split()
@@ -953,7 +1053,7 @@ answer = round(answer, 1)
 print(int(answer))`;
 }
 
-function renderSolution(model) {
+function buildSolutionContent(model, dataFileName = "23.txt") {
   const shortest = describePath(model, model.shortest);
   const longest = describePath(model, model.longest);
   const answer = getAnswer(model);
@@ -998,19 +1098,282 @@ function renderSolution(model) {
     )}.</div>`;
   }
 
+  return `
+    <ol>${relevantSteps.map((step) => `<li>${step}</li>`).join("")}</ol>
+    <div class="path-grid">${pathCards}</div>
+    ${differenceText}
+    <div class="answer-box">Ответ: ${answer}</div>
+    <div class="code-title">Способ 1. Python: алгоритм Флойда</div>
+    <div class="python-wrap"><pre><code>${highlightPython(buildFloydCode(model, dataFileName))}</code></pre></div>
+    <div class="code-title">Способ 2. Python: алгоритм Дейкстры / релаксация DAG</div>
+    <div class="python-wrap"><pre><code>${highlightPython(buildRelaxationCode(model, dataFileName))}</code></pre></div>
+  `;
+}
+
+function renderSolution(model) {
   elements.solutionWrap.innerHTML = `
     <details>
       <summary>Показать пошаговый разбор, два способа решения и ответ</summary>
-      <ol>${relevantSteps.map((step) => `<li>${step}</li>`).join("")}</ol>
-      <div class="path-grid">${pathCards}</div>
-      ${differenceText}
-      <div class="answer-box">Ответ: ${answer}</div>
-      <div class="code-title">Способ 1. Python: алгоритм Флойда</div>
-      <div class="python-wrap"><pre><code>${escapeHtml(buildFloydCode(model))}</code></pre></div>
-      <div class="code-title">Способ 2. Python: алгоритм Дейкстры / релаксация DAG</div>
-      <div class="python-wrap"><pre><code>${escapeHtml(buildRelaxationCode(model))}</code></pre></div>
+      ${buildSolutionContent(model)}
     </details>
   `;
+}
+
+const PRINT_DOCUMENT_STYLES = `
+  @page { size: A4; margin: 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto;
+    max-width: 1000px;
+    padding: 20px;
+    color: #10223a;
+    background: #fff;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-size: 14px;
+    line-height: 1.48;
+  }
+  h1 { margin: 0 0 18px; font-size: 27px; }
+  h2 { margin: 0 0 10px; font-size: 21px; }
+  p { margin: 0 0 8px; }
+  ol { padding-left: 22px; }
+  li + li { margin-top: 6px; }
+  .task-item, .solution-item { break-after: page; page-break-after: always; }
+  .task-item:last-child, .solution-item:last-child { break-after: auto; page-break-after: auto; }
+  .item-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #2563eb;
+  }
+  .file-note { color: #536883; font-size: 12px; }
+  .graph-frame { margin: 14px 0 0; text-align: center; }
+  .graph-frame img { width: 100%; max-height: 145mm; object-fit: contain; }
+  .graph-frame figcaption { margin-top: 5px; color: #536883; font-size: 12px; }
+  .path-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .path-box, .note-box, .answer-box {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border: 1px solid #cbd8ec;
+    border-radius: 8px;
+    background: #f7f9fd;
+  }
+  .answer-box { border-color: #9ed8b7; background: #eefaf3; font-size: 18px; font-weight: 700; }
+  .code-title { margin: 16px 0 7px; font-weight: 700; }
+  .python-wrap { border: 1px solid #cbd8ec; border-radius: 8px; background: #f7f9fd; }
+  .python-wrap code { display: block; }
+  .py-keyword { color: #1d4ed8; font-weight: 700; }
+  .py-builtin { color: #08717f; font-weight: 700; }
+  .py-string { color: #a13d10; }
+  .py-number { color: #a51f55; }
+  .py-comment { color: #16784a; font-style: italic; }
+  pre { margin: 0; padding: 10px; white-space: pre-wrap; overflow-wrap: anywhere; font: 10px/1.4 Consolas, monospace; }
+  code { font-family: Consolas, monospace; }
+  @media print {
+    body { max-width: none; padding: 0; }
+    a { color: inherit; text-decoration: none; }
+  }
+`;
+
+function makePrintDocument(title, body) {
+  return `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)}</title>
+  <style>${PRINT_DOCUMENT_STYLES}</style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  ${body}
+</body>
+</html>\n`;
+}
+
+function buildTasksDocument(variants) {
+  const body = variants
+    .map(
+      (variant) => `
+        <section class="task-item">
+          <div class="item-heading">
+            <h2>Задание ${variant.number}</h2>
+            <span class="file-note">Данные: ${escapeHtml(variant.dataName)} · Схемы: ${escapeHtml(variant.graphName)}, ${escapeHtml(variant.graphJpegName)}</span>
+          </div>
+          ${buildTaskContent(variant.model, variant.dataName)}
+          <figure class="graph-frame">
+            <img src="Графы/${encodeURIComponent(variant.graphName)}" alt="Граф к заданию ${variant.number}" />
+            <figcaption>Граф к заданию ${variant.number}. Исходные данные находятся в файле Данные/${escapeHtml(variant.dataName)}.</figcaption>
+          </figure>
+        </section>`
+    )
+    .join("\n");
+  return makePrintDocument("Задание 23 ЕГЭ: печатные варианты", body);
+}
+
+function buildSolutionsDocument(variants) {
+  const body = variants
+    .map(
+      (variant) => `
+        <section class="solution-item">
+          <div class="item-heading">
+            <h2>Задание ${variant.number}</h2>
+            <span class="file-note">Файл: ${escapeHtml(variant.dataName)}</span>
+          </div>
+          <p><strong>${escapeHtml(questionSentence(variant.model))}</strong></p>
+          ${buildSolutionContent(variant.model, variant.dataName)}
+        </section>`
+    )
+    .join("\n");
+  return makePrintDocument("Задание 23 ЕГЭ: ответы и решения", body);
+}
+
+function buildPackageReadme(count) {
+  return `КОМПЛЕКТ ЗАДАНИЯ 23 ЕГЭ
+
+Количество задач: ${count}
+
+Состав архива:
+- Задания.html — формулировки без ответов и решений, готовые к печати;
+- Ответы_и_решения.html — ответы, пошаговые разборы и два решения на Python;
+- Графы/Граф_N.svg — векторная схема для задания N;
+- Графы/Граф_N.jpeg — схема для задания N в формате JPEG;
+- Данные/23_N.txt — исходные данные для задания N.
+
+Перед открытием HTML-файлов распакуйте архив целиком, чтобы изображения графов
+загружались по относительным ссылкам. Для печати откройте нужный HTML-файл в
+браузере и выберите команду «Печать».
+`;
+}
+
+function taskCountLabel(count) {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) {
+    return `${count} задач`;
+  }
+  if (last === 1) {
+    return `${count} задача`;
+  }
+  if (last >= 2 && last <= 4) {
+    return `${count} задачи`;
+  }
+  return `${count} задач`;
+}
+
+function waitForInterfaceUpdate() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+async function buildPrintPackage(count) {
+  const variants = [];
+  const files = [];
+
+  for (let index = 1; index <= count; index += 1) {
+    elements.printStatus.textContent = `Создаётся задание ${index} из ${count}...`;
+    await waitForInterfaceUpdate();
+
+    let variant = null;
+    for (let attempt = 0; attempt < 12 && variant === null; attempt += 1) {
+      try {
+        const model = generateModel(getConfig());
+        const lines = makeFileLines(model);
+        const graph = serializeGraph(model);
+        const graphJpeg = await graphSvgToJpeg(graph);
+        variant = {
+          number: index,
+          model,
+          lines,
+          graph,
+          graphJpeg,
+          dataName: `23_${index}.txt`,
+          graphName: `Граф_${index}.svg`,
+          graphJpegName: `Граф_${index}.jpeg`,
+        };
+      } catch (error) {
+        if (attempt === 11) {
+          throw error;
+        }
+      }
+    }
+
+    variants.push(variant);
+    files.push(
+      { name: `Данные/${variant.dataName}`, data: `${variant.lines.join("\n")}\n` },
+      { name: `Графы/${variant.graphName}`, data: variant.graph },
+      { name: `Графы/${variant.graphJpegName}`, data: variant.graphJpeg }
+    );
+  }
+
+  files.unshift(
+    { name: "Задания.html", data: buildTasksDocument(variants) },
+    { name: "Ответы_и_решения.html", data: buildSolutionsDocument(variants) },
+    { name: "README.txt", data: buildPackageReadme(count) }
+  );
+
+  return {
+    blob: window.PrintZip.buildZip(files),
+    fileCount: files.length,
+  };
+}
+
+function resetPrintDownload() {
+  if (printPackageUrl) {
+    URL.revokeObjectURL(printPackageUrl);
+    printPackageUrl = null;
+  }
+  elements.printDownload.hidden = true;
+  elements.printDownload.removeAttribute("href");
+}
+
+function setPrintBusy(isBusy) {
+  elements.printCount.disabled = isBusy;
+  elements.printCloseBtn.disabled = isBusy;
+  elements.printCancelBtn.disabled = isBusy;
+  elements.printCreateBtn.disabled = isBusy;
+  elements.printCreateBtn.textContent = isBusy ? "Создание..." : "Создать комплект";
+}
+
+function openPrintDialog() {
+  resetPrintDownload();
+  elements.printStatus.textContent = "";
+  elements.printDialog.showModal();
+  elements.printCount.focus();
+  elements.printCount.select();
+}
+
+function closePrintDialog() {
+  if (!elements.printCreateBtn.disabled) {
+    elements.printDialog.close();
+  }
+}
+
+async function handlePrintSubmit(event) {
+  event.preventDefault();
+  if (!elements.printForm.reportValidity()) {
+    return;
+  }
+
+  const count = clamp(Number(elements.printCount.value), 1, 30);
+  elements.printCount.value = String(count);
+  resetPrintDownload();
+  setPrintBusy(true);
+
+  try {
+    const result = await buildPrintPackage(count);
+    printPackageUrl = URL.createObjectURL(result.blob);
+    elements.printDownload.href = printPackageUrl;
+    elements.printDownload.download = `task23_print_${count}.zip`;
+    elements.printDownload.hidden = false;
+    elements.printStatus.textContent = `Готово: ${taskCountLabel(count)}, ${result.fileCount} файлов в ZIP-архиве.`;
+    elements.printDownload.click();
+  } catch (error) {
+    elements.printStatus.textContent = `Не удалось создать комплект: ${error.message}`;
+  } finally {
+    setPrintBusy(false);
+  }
 }
 
 function generateTask() {
@@ -1038,5 +1401,9 @@ elements.density.addEventListener("input", () => {
   elements.densityValue.textContent = elements.density.value;
 });
 elements.generateBtn.addEventListener("click", generateTask);
+elements.printBtn.addEventListener("click", openPrintDialog);
+elements.printCloseBtn.addEventListener("click", closePrintDialog);
+elements.printCancelBtn.addEventListener("click", closePrintDialog);
+elements.printForm.addEventListener("submit", handlePrintSubmit);
 
 generateTask();

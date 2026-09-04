@@ -15,6 +15,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, sans-serif;
@@ -124,8 +128,22 @@ button:disabled {
   cursor: wait;
 }
 
-.controls button {
+.control-actions {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.button-secondary {
+  border-color: #9fb0c8;
+  background: #f5f8fd;
+  color: #17325f;
+}
+
+.button-secondary:hover {
+  background: #eaf1ff;
+  filter: none;
 }
 
 .theory-wrap,
@@ -142,6 +160,16 @@ button:disabled {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.theory-alert {
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  border: 1px solid #e5bd52;
+  border-left: 5px solid #d49300;
+  border-radius: 10px;
+  background: #fff8dc;
+  color: #5c4300;
 }
 
 .chip {
@@ -315,6 +343,35 @@ th {
   background: #f3f7ff;
 }
 
+.python-wrap code {
+  display: block;
+  padding: 0;
+  background: transparent;
+}
+
+.py-keyword {
+  color: #1d4ed8;
+  font-weight: 750;
+}
+
+.py-builtin {
+  color: #08717f;
+  font-weight: 700;
+}
+
+.py-string {
+  color: #a13d10;
+}
+
+.py-number {
+  color: #a51f55;
+}
+
+.py-comment {
+  color: #16784a;
+  font-style: italic;
+}
+
 pre {
   margin: 0;
   padding: 12px;
@@ -331,6 +388,84 @@ code {
   font-family: "Consolas", "DejaVu Sans Mono", monospace;
 }
 
+.print-dialog {
+  width: min(560px, calc(100% - 28px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(16, 34, 58, 0.24);
+}
+
+.print-dialog::backdrop {
+  background: rgba(16, 34, 58, 0.46);
+  backdrop-filter: blur(3px);
+}
+
+.print-form {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.dialog-heading h2 {
+  margin-bottom: 5px;
+}
+
+.dialog-heading p,
+.dialog-note {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dialog-close {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  padding: 0 0 3px;
+  border-color: transparent;
+  background: transparent;
+  color: #445b78;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.dialog-close:hover {
+  background: #edf2fa;
+  filter: none;
+}
+
+.print-status {
+  min-height: 0;
+  border-radius: 10px;
+  color: #294665;
+}
+
+.print-status:not(:empty) {
+  padding: 10px 12px;
+  border: 1px solid #cbd8ec;
+  background: #f5f8fd;
+}
+
+.print-download {
+  margin-top: -4px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 2px;
+}
+
 @media (max-width: 860px) {
   .controls,
   .theory-grid,
@@ -339,8 +474,14 @@ code {
     grid-template-columns: 1fr;
   }
 
-  .controls button {
-    grid-column: auto;
+  .control-actions,
+  .dialog-actions {
+    align-items: stretch;
+  }
+
+  .control-actions button,
+  .dialog-actions button {
+    flex: 1;
   }
 
   h1 {
