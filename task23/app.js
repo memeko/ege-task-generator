@@ -9,7 +9,6 @@ const QUESTION_LABELS = {
 const elements = {
   questionType: document.getElementById("questionType"),
   startMode: document.getElementById("startMode"),
-  vertexCount: document.getElementById("vertexCount"),
   density: document.getElementById("density"),
   densityValue: document.getElementById("densityValue"),
   generateBtn: document.getElementById("generateBtn"),
@@ -59,14 +58,12 @@ function formatWeight(weight10) {
 }
 
 function getConfig() {
-  const vertexCount = clamp(Number(elements.vertexCount.value) || 10, 7, 16);
   const density = clamp(Number(elements.density.value) || 36, 25, 65);
-  elements.vertexCount.value = String(vertexCount);
   elements.density.value = String(density);
   elements.densityValue.textContent = String(density);
 
   return {
-    vertexCount,
+    vertexCount: randInt(7, 16),
     density,
     questionType:
       elements.questionType.value === "random"
@@ -373,7 +370,7 @@ function renderTask(model) {
     <p>В текстовом файле содержится описание ациклического ориентированного взвешенного графа. В каждой строке файла записаны два натуральных числа (<em>L</em>, <em>M</em>) и одно положительное вещественное число (<em>W</em>). <em>L</em> и <em>M</em> — номера вершин графа, <em>W</em> — вес ребра, ведущего из вершины <em>L</em> в вершину <em>M</em>. Таким образом, количество строк в файле равно количеству рёбер в графе. Две вершины графа не могут быть соединены более чем одним ребром.</p>
     <p>${escapeHtml(questionSentence(model))} Существование хотя бы одного такого пути гарантируется. Под длиной пути понимается сумма весов всех рёбер, составляющих путь.</p>
     <p>Для выполнения этого задания следует написать программу.</p>
-    <p>Если граф содержит <em>N</em> вершин, они имеют номера от 1 до <em>N</em> без пропусков. Рёбра в файле могут быть записаны в любом порядке, а направление ребра не обязано идти от меньшего номера к большему. Значения <em>L</em> и <em>M</em> не превышают 200, значение <em>W</em> не превышает 10&nbsp;000, количество строк в файле не превышает 200. Числа в строках разделены произвольным ненулевым количеством пробелов и/или символов табуляции.</p>
+    <p>Если граф содержит <em>N</em> вершин, они имеют номера от 1 до <em>N</em> без пропусков. Рёбра в файле могут быть записаны в любом порядке, а направление ребра не обязано идти от меньшего номера к большему. Значения <em>L</em> и <em>M</em> не превышают 200, значение <em>W</em> не превышает 10&nbsp;000. В этом файле записано ${model.graph.edges.length} строк, то есть ровно по одной строке для каждого из ${model.graph.edges.length} рёбер графа. Числа в строках разделены произвольным ненулевым количеством пробелов и/или символов табуляции.</p>
   `;
 }
 
@@ -405,7 +402,7 @@ function renderParams(model) {
       <p><strong>Конечная вершина:</strong> ${model.graph.ids[model.graph.target]}</p>
       <p><strong>Вершин:</strong> ${model.graph.ids.length}</p>
       <p><strong>Рёбер:</strong> ${model.graph.edges.length}</p>
-      <p><strong>Проверка строк:</strong> ${model.graph.edges.length} ≥ ${model.graph.ids[model.graph.target]} (номер конечной вершины)</p>
+      <p><strong>Строк в файле:</strong> ${model.graph.edges.length} (по одной строке на ребро)</p>
       <p><strong>Фактическая плотность:</strong> ${actualDensity}% от возможных направленных рёбер между уровнями</p>
     </div>
   `;
@@ -706,19 +703,25 @@ function buildFloydCode(model) {
     # Создаём матрицу: 0 на диагонали, бесконечность между остальными парами.
     inf = float('inf')
     d = {}
+    # Проходим все вершины a, которые задают строки матрицы.
     for a in vertices:
         d[a] = {}
+        # Проходим все вершины b, которые задают столбцы матрицы.
         for b in vertices:
             d[a][b] = inf
         d[a][a] = 0
 
     # Записываем в матрицу веса существующих направленных рёбер.
+    # Проходим все тройки: начало ребра, конец ребра и его вес.
     for a, b, weight in edges:
         d[a][b] = weight
 
     # Разрешаем каждой вершине k быть промежуточной между i и j.
+    # Проходим все возможные промежуточные вершины k.
     for k in vertices:
+        # Для каждой k проходим все возможные начальные вершины i.
         for i in vertices:
+            # Для каждой пары i и k проходим все конечные вершины j.
             for j in vertices:
                 new_distance = d[i][k] + d[k][j]
                 if new_distance < d[i][j]:
@@ -729,19 +732,25 @@ function buildFloydCode(model) {
     # Для максимума недостижимую пару обозначаем как минус бесконечность.
     minus_inf = float('-inf')
     d = {}
+    # Проходим все вершины a, которые задают строки матрицы.
     for a in vertices:
         d[a] = {}
+        # Проходим все вершины b, которые задают столбцы матрицы.
         for b in vertices:
             d[a][b] = minus_inf
         d[a][a] = 0
 
     # Записываем в матрицу веса существующих направленных рёбер.
+    # Проходим все тройки: начало ребра, конец ребра и его вес.
     for a, b, weight in edges:
         d[a][b] = weight
 
     # В DAG сохраняем большую длину пути через промежуточную вершину k.
+    # Проходим все возможные промежуточные вершины k.
     for k in vertices:
+        # Для каждой k проходим все возможные начальные вершины i.
         for i in vertices:
+            # Для каждой пары i и k проходим все конечные вершины j.
             for j in vertices:
                 if d[i][k] != minus_inf and d[k][j] != minus_inf:
                     new_distance = d[i][k] + d[k][j]
@@ -774,6 +783,7 @@ FINISH = ${finish}
 edges = []
 vertices = set()
 with open('23.txt') as file:
+    # Проходим все строки файла; каждая строка описывает одно ребро.
     for line in file:
         L, M, W = line.split()
         L = int(L)
@@ -810,6 +820,7 @@ vertices = set()
 indegree = {}
 
 with open('23.txt') as file:
+    # Проходим все строки файла; каждая строка описывает одно ребро.
     for line in file:
         L, M, W = line.split()
         L = int(L)
@@ -828,6 +839,7 @@ with open('23.txt') as file:
 
 vertices = sorted(vertices)
 
+# Проходим все вершины и добавляем пустой список тем, из которых нет рёбер.
 for vertex in vertices:
     if vertex not in graph:
         graph[vertex] = []`;
@@ -836,12 +848,15 @@ for vertex in vertices:
     inf = float('inf')
     distance = {}
     used = set()
+    # Проходим все вершины и сначала считаем расстояние до них бесконечным.
     for vertex in vertices:
         distance[vertex] = inf
     distance[START] = 0
 
+    # Повторяем выбор ближайшей вершины, пока не обработаем все достижимые.
     while len(used) < len(vertices):
         current = None
+        # Проходим все вершины и ищем необработанную с наименьшим расстоянием.
         for vertex in vertices:
             if vertex not in used and distance[vertex] != inf:
                 if current is None or distance[vertex] < distance[current]:
@@ -851,6 +866,7 @@ for vertex in vertices:
             break
         used.add(current)
 
+        # Проходим всех соседей current и уточняем расстояния до них.
         for neighbour, weight in graph[current]:
             new_distance = distance[current] + weight
             if new_distance < distance[neighbour]:
@@ -860,14 +876,17 @@ for vertex in vertices:
   const topological = `def topological_order():
     degree = indegree.copy()
     queue = []
+    # Проходим все вершины и находим вершины без входящих рёбер.
     for vertex in vertices:
         if degree[vertex] == 0:
             queue.append(vertex)
 
     order = []
+    # Извлекаем вершины из очереди, пока она не станет пустой.
     while len(queue) > 0:
         current = queue.pop(0)
         order.append(current)
+        # Проходим исходящие рёбра current и уменьшаем степени соседей.
         for neighbour, weight in graph[current]:
             degree[neighbour] -= 1
             if degree[neighbour] == 0:
@@ -878,13 +897,16 @@ for vertex in vertices:
 def longest_path():
     minus_inf = float('-inf')
     distance = {}
+    # Проходим все вершины и сначала помечаем их как недостижимые.
     for vertex in vertices:
         distance[vertex] = minus_inf
     distance[START] = 0
 
     order = topological_order()
+    # Проходим вершины в топологическом порядке: предшественники идут раньше.
     for current in order:
         if distance[current] != minus_inf:
+            # Проходим всех соседей current и сохраняем большую длину пути.
             for neighbour, weight in graph[current]:
                 new_distance = distance[current] + weight
                 if new_distance > distance[neighbour]:
@@ -969,7 +991,7 @@ function renderSolution(model) {
 
   elements.solutionWrap.innerHTML = `
     <details>
-      <summary>Показать пошаговый разбор, два способа решения и ответ (спойлер)</summary>
+      <summary>Показать пошаговый разбор, два способа решения и ответ</summary>
       <ol>${relevantSteps.map((step) => `<li>${step}</li>`).join("")}</ol>
       <div class="path-grid">${pathCards}</div>
       ${differenceText}
